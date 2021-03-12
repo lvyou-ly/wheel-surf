@@ -45,7 +45,7 @@ export default {
       default: 5000,
     },
     /**
-     * [{ id, prizeName }]
+     * [{ id, prizeName, percent }]
      */
     prizeList: {
       type: Array,
@@ -66,20 +66,6 @@ export default {
           ) {
             return false;
           }
-        }
-        return true;
-      },
-    },
-    // { [id]: [percentage] } key = 奖品id value = 奖品中奖率，数据结构选择对象是因为对象查找效率更高
-    getPrize: {
-      required: true,
-      validator(value) {
-        if (typeof value === "undefined") {
-          return false;
-        } else if (
-          Object.prototype.toString.call(value).slice(8, -1) !== "Object"
-        ) {
-          return false;
         }
         return true;
       },
@@ -117,18 +103,11 @@ export default {
       let base = 360 / this.userPrizeList.length;
       this.userPrizeList.forEach((item, index) => {
         item.angle = this.direction === 'clockWise' ? 360 - index * base : index * base;
-        if (this.getPrize[item.id]) {
-          // 计算奖品的权重和，*10000是因为允许中奖率精确度保留小数点后两位
-          this.prizeWeightedSum += this.getPrize[item.id] * 100;
-          // 生成包含奖品详细信息的数组，包括id,prizeName,angle,weight
-          this.localPrizeInfo.push({
-            ...item,
-            weight: this.getPrize[item.id] * 100,
-          });
-        }
+        // 计算奖品的权重和，*100是因为允许中奖率精确度保留小数点后两位
+        this.prizeWeightedSum += item.percent * 100;
       });
       // 根据权重对奖品进行排序
-      this.localPrizeInfo = this.sort(this.localPrizeInfo);
+      this.userPrizeList = this.sort(this.userPrizeList);
     },
     startLattory() {
       // this.needRotateAngle += 300;
@@ -169,10 +148,10 @@ export default {
     weightedAverage() {
       let random = Math.floor(Math.random() * this.prizeWeightedSum) + 1;
       let sum = 0;
-      for (let i = 0; i < this.localPrizeInfo.length; i++) {
-        sum += this.localPrizeInfo[i].weight;
+      for (let i = 0; i < this.userPrizeList.length; i++) {
+        sum += this.userPrizeList[i].percent * 100;
         if (sum >= random) {
-          this.prizeObj = this.localPrizeInfo[i];
+          this.prizeObj = this.userPrizeList[i];
           console.log('prizeobj', this.prizeObj.id)
           break;
         }
